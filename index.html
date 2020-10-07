@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Visualization of dimensions required to build a star shaped frame">
+    <meta name="keywords" content="star,frame,wood,christmas,pentagon">
+    <meta name="author" content="Moritz Pflanzer">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Star Frame Visualizer</title>
+    <style type="text/css">
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: sans-serif;
+      }
+
+      #control {
+        position: sticky;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: #eee;
+        padding: 1vw;
+        display: flex;
+        justify-content: space-evenly;
+        align-items: baseline;
+      }
+
+      input {
+        font-size: 1em;
+      }
+
+      input[type="number"] {
+        width: 4em;
+      }
+
+      label.left {
+        margin-right: 0.5em;
+      }
+
+      canvas {
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+
+      button {
+        border: 1px solid;
+        padding: 0.3em;
+        transition-duration: 0.2s;
+        font-size: 1em;
+        cursor: pointer;
+      }
+    </style>
+
+    <script>
+      class Point {
+        constructor(x, y) {
+          this.x = x;
+          this.y = y;
+        }
+
+        add(p) {
+          this.x += p.x;
+          this.y += p.y;
+          return this;
+        }
+
+        sub(p) {
+          this.x -= p.x;
+          this.y -= p.y;
+          return this;
+        }
+
+        length() {
+          return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
+        }
+
+        static fromPolar(a, l) {
+          return new Point(Math.cos(a) * l, Math.sin(a) * l);
+        }
+      }
+
+      Math.rad2deg = function(radians) {
+        return radians * 180 / Math.PI;
+      }
+      
+      function draw(canvas, scale) {
+        let ctx = canvas.getContext("2d");
+      
+        function drawAngle(start, a, c, r, t) {
+          ctx.beginPath();
+          ctx.strokeStyle = 'blue';
+          let p = Point.fromPolar(start, r);
+          ctx.moveTo(c.x + p.x, - c.y - p.y);
+          ctx.arc(c.x, - c.y, r, -start, -(start + a), true);
+          let tp = Point.fromPolar(start + a / 2, 4 * r / 5);
+          ctx.stroke();
+      
+          //ctx.font = '20px serif';
+          //ctx.fillText(t, c.x + tp.x - 5, - c.y - tp.y);
+      
+          ctx.font = '20px sans-serif';
+          ctx.fillStyle = "blue";
+          ctx.textAlign = "center";
+          ctx.fillText(Math.rad2deg(a).toFixed(1) + "\u00B0", c.x + tp.x, - c.y - tp.y);
+        }
+      
+        let ro = parseInt(document.getElementById("ro").value, 10);
+        let ri = parseInt(document.getElementById("ri").value, 10);
+        let t = parseInt(document.getElementById("t").value, 10);
+        let drawFullStar = !document.getElementById("detail").checked;
+      
+        const alpha = 2 * Math.PI / 10;
+      
+        let a = ro * Math.sin(alpha);
+        let c = ro * Math.cos(alpha);
+        let cp = c - ri;
+        let gamma = Math.PI / 2 - alpha;
+        let gammap = Math.atan(cp / a);
+        let gammapp = gamma - gammap;
+        let delta = Math.PI - (Math.PI / 2 - gammap);
+        let l1 = a / Math.cos(gammap);
+        let l1p = t / Math.tan(Math.PI - delta);
+        let l2p = Math.tan(Math.PI / 2 - gammapp) * t;
+        let l2 = Math.sqrt(Math.pow(t, 2) + Math.pow(l2p, 2));
+        let l3 = (ro - l2) * l1 / ro;
+        let l4 = Math.sqrt(Math.pow(t, 2) + Math.pow(l1p, 2));
+      
+        let h = Math.sin(gamma) * a;
+        let hp = Math.sin(Math.PI / 2 - gammapp) * t;
+        let hpp = Math.sin(gammapp) * l1;
+      
+        if(drawFullStar) {
+          if(!scale) {
+            scale = (canvas.width - 200) / (2 * ro);
+            canvas.height = 2 * ro * scale + 200;
+          } else {
+            canvas.width= 2 * ro * scale + 200;
+            canvas.height = 2 * ro * scale + 200;
+          }
+      
+          // Place in center of canvas
+          ctx.translate(canvas.width / 2, canvas.height / 2);
+        } else {
+          if(!scale) {
+            scale = (canvas.width - 200) / (Math.max(h, hpp) + hp);
+            canvas.height = ro * scale + 200;
+          } else {
+            canvas.width = (Math.max(h, hpp) + hp) * scale + 200;
+            canvas.height = ro * scale + 200;
+          }
+      
+          // Place as far top-left as possible
+          ctx.translate(100 + hp * scale, 100 + ro * scale);
+        }
+      
+      
+        function drawPart(withLabels) {
+          let A = new Point(0, 0);
+          let B = Point.fromPolar(Math.PI / 2 - alpha, c * scale);
+          let C = Point.fromPolar(Math.PI / 2, ro * scale);
+          let Cp = new Point(C.x, C.y - t * scale / Math.sin(gammapp));
+          let D = Point.fromPolar(Math.PI / 2 - alpha, ri * scale);
+          let Dp = Point.fromPolar(Math.PI / 2 - alpha, ri * scale - t * scale / Math.cos(Math.PI / 2 - delta));
+          let E = new Point(C.x - Math.cos(gammapp) * t * scale, C.y - Math.sin(gammapp) * t * scale);
+          let F = new Point(D.x + Math.sin(Math.PI - delta - alpha) * l1p * scale, D.y - Math.cos(Math.PI - delta - alpha) * l1p * scale);
+      
+          /*
+             ctx.beginPath();
+             ctx.strokeStyle = 'red';
+             ctx.moveTo(E.x, -E.y);
+             ctx.lineTo(E.x + hp * scale, -E.y);
+             ctx.moveTo(B.x, -B.y);
+             ctx.lineTo(B.x - h * scale, -B.y);
+             ctx.moveTo(D.x, -D.y);
+             ctx.lineTo(D.x - hpp * scale, -D.y);
+             ctx.stroke();
+           */
+      
+          ctx.beginPath();
+          ctx.strokeStyle = 'black';
+          ctx.moveTo(0, 0);
+          ctx.lineTo(B.x, - B.y);
+          ctx.moveTo(0, 0);
+          ctx.lineTo(C.x, - C.y);
+          ctx.stroke();
+      
+          ctx.beginPath();
+          ctx.strokeStyle = 'green';
+          ctx.fillStyle = 'green';
+          ctx.font = '20px sans-serif';
+          ctx.moveTo(C.x, - C.y);
+          ctx.lineTo(D.x, - D.y);
+          ctx.lineTo(Dp.x, - Dp.y);
+          ctx.lineTo(Cp.x, - Cp.y);
+          ctx.lineTo(C.x, - C.y);
+          ctx.stroke();
+      
+          if(withLabels) {
+            ctx.fillText(l1.toFixed(1) + "mm", (C.x + D.x) / 2 + 10, - (C.y + D.y) / 2);
+            ctx.fillText(l4.toFixed(1) + "mm", (D.x + Dp.x) / 2 + 10, - (D.y + Dp.y) / 2);
+            ctx.fillText(l3.toFixed(1) + "mm", (Cp.x + Dp.x) / 2 + 10, - (Cp.y + Dp.y) / 2);
+            ctx.fillText(l2.toFixed(1) + "mm", (C.x + Cp.x) / 2 + 10, - (C.y + Cp.y) / 2);
+          }
+      
+          if(withLabels) {
+            ctx.setLineDash([5, 15]);
+            ctx.beginPath();
+            ctx.strokeStyle = 'green';
+            ctx.fillStyle = 'green';
+            ctx.font = '20px sans-serif';
+            ctx.moveTo(C.x, - C.y);
+            ctx.lineTo(E.x, - E.y);
+            ctx.lineTo(Cp.x, - Cp.y);
+      
+            ctx.moveTo(Dp.x, - Dp.y);
+            ctx.lineTo(F.x, - F.y);
+            ctx.lineTo(D.x, - D.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+      
+          if(withLabels) {
+            ctx.fillText(t.toFixed(1) + "mm", (C.x + E.x) / 2 + 10, - (C.y + E.y) / 2);
+            ctx.fillText(l2p.toFixed(1) + "mm", (Cp.x + E.x) / 2 + 10, - (Cp.y + E.y) / 2);
+            ctx.fillText(l1p.toFixed(1) + "mm", (F.x + D.x) / 2 + 10, - (F.y + D.y) / 2);
+            ctx.fillText(t.toFixed(1) + "mm", (Dp.x + F.x) / 2 + 10, - (Dp.y + F.y) / 2);
+          }
+      
+          ctx.beginPath();
+          ctx.strokeStyle = 'grey';
+          ctx.moveTo(B.x, - B.y);
+          ctx.lineTo(C.x, - C.y);
+          ctx.stroke();
+      
+          if(withLabels) {
+            //drawAngle(Math.PI / 2 - alpha, alpha, A, 100, "\u03B1");
+            //drawAngle(3 * Math.PI / 2, gamma, C, 100, "\u03B3");
+            //drawAngle(3 * Math.PI / 2 + gammapp, gammap, C, 40, "\u03B3'");
+            let arcSize = t / 2 * scale;
+            drawAngle(3 * Math.PI / 2, gammapp, C, arcSize);
+            drawAngle(3 * Math.PI / 2 + gammapp, Math.PI - gammapp, Cp, arcSize);
+            drawAngle(3 * Math.PI / 2 - alpha - delta, delta, D, arcSize);
+            drawAngle(Math.PI / 2 - alpha, Math.PI - delta, Dp, arcSize);
+          }
+        }
+      
+        for(let i = 0; i < 10; ++i) {
+          ctx.save();
+          ctx.rotate((i + (i % 2)) * alpha);
+      
+          if(i % 2 == 1) {
+            ctx.scale(-1, 1);
+          }
+      
+          drawPart(i == 0);
+          ctx.restore();
+      
+          if(!drawFullStar) {
+            break;
+          }
+        }
+      }
+      
+      function redraw() {
+        let canvas = document.getElementById("canvas");
+        canvas.width = window.innerWidth;
+        draw(canvas);
+      }
+      
+      function preparePrint() {
+        let dpi = 300;
+        let ppmm = dpi / 25.4;
+      
+        let printCanvas = document.createElement("canvas");
+        printCanvas.width = 210 * ppmm;
+        printCanvas.height = 297 * ppmm;
+      
+        draw(printCanvas, ppmm);
+        let link = document.createElement("a");
+        link.setAttribute('href', 'data:application/octet-stream;charset=utf-16le;' + printCanvas.toDataURL());
+        link.setAttribute('download', "star.png");
+        link.click();
+        link.remove();
+        printCanvas.remove();
+      }
+      
+      window.addEventListener('DOMContentLoaded', (event) => {
+        redraw();
+      });
+    </script>
+  </head>
+
+  <body>
+    <div>
+      <div id="control">
+        <div>
+          <label class="left" for="ri">Inner radius (incircle):</label>
+          <input type="number" step="1" value="75" id="ri" onchange="redraw()" />
+          <span>mm</span>
+        </div>
+        <div>
+          <label class="left" for="ro">Outer radius (circumscribed circle):</label>
+          <input type="number" step="1" value="200" id="ro" onchange="redraw()" />
+          <span>mm</span>
+        </div>
+        <div>
+          <label class="left" for="t">Frame thickness:</label>
+          <input type="number" step="1" value="20" id="t" onchange="redraw()" />
+          <span>mm</span>
+        </div>
+        <div>
+          <input type="checkbox" id="detail" onchange="redraw()" />
+          <label for="detail">Detail view</label>
+        </div>
+        <button type="button" onclick="preparePrint()">Download</button>
+      </div>
+
+      <canvas id="canvas">
+        Your browser does not support the canvas element.
+      </canvas>
+    </div>
+  </body>
+</html>
