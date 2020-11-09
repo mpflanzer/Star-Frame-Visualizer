@@ -21,6 +21,9 @@
         left: 0;
         right: 0;
         background: #eee;
+      }
+
+      #control .flex-row {
         padding: 1vw;
         display: flex;
         justify-content: space-evenly;
@@ -33,6 +36,11 @@
 
       input[type="number"] {
         width: 4em;
+      }
+
+      input[readonly] {
+        color: #666;
+        background-color: #ccc;
       }
 
       label.left {
@@ -82,11 +90,32 @@
         }
       }
 
+      Math.cot = function(x) {
+        return 1 / Math.tan(x)
+      }
+      
+      Math.deg2rad = function(degree) {
+        return degree * Math.PI / 180;
+      }
+
       Math.rad2deg = function(radians) {
         return radians * 180 / Math.PI;
       }
-      
-      function draw(canvas, scale) {
+
+      var star = {
+        alpha: 2 * Math.PI / 10,
+        ro: null,
+        ri: null,
+        t: null,
+        delta: null,
+        gammapp: null,
+        l1: null,
+        l2: null,
+        l3: null,
+        l4: null,
+      }
+
+      function draw(canvas, star, scale) {
         let ctx = canvas.getContext("2d");
       
         function drawAngle(start, a, c, r, t) {
@@ -107,65 +136,64 @@
           ctx.fillText(Math.rad2deg(a).toFixed(1) + "\u00B0", c.x + tp.x, - c.y - tp.y);
         }
       
-        let ro = parseInt(document.getElementById("ro").value, 10);
-        let ri = parseInt(document.getElementById("ri").value, 10);
-        let t = parseInt(document.getElementById("t").value, 10);
+        //let cp = c - ri;
+        //let gammap = Math.atan(cp / a);
+        //let gammapp = gamma - gammap;
+        //let delta = Math.PI - (Math.PI / 2 - gammap);
+        //let l1 = a / Math.cos(gammap);
+        //let l1p = t / Math.tan(Math.PI - delta);
+        //let l2p = Math.tan(Math.PI / 2 - gammapp) * t;
+        //let l2 = Math.sqrt(Math.pow(t, 2) + Math.pow(l2p, 2));
+        //let l3 = (ro - l2) * l1 / ro;
+        //let l4 = Math.sqrt(Math.pow(t, 2) + Math.pow(l1p, 2));
+
+              let a = star.ro * Math.sin(star.alpha);
+              let c = star.ro * Math.cos(star.alpha);
+              let gamma = Math.PI / 2 - star.alpha
+
         let drawFullStar = !document.getElementById("detail").checked;
       
-        const alpha = 2 * Math.PI / 10;
-      
-        let a = ro * Math.sin(alpha);
-        let c = ro * Math.cos(alpha);
-        let cp = c - ri;
-        let gamma = Math.PI / 2 - alpha;
-        let gammap = Math.atan(cp / a);
-        let gammapp = gamma - gammap;
-        let delta = Math.PI - (Math.PI / 2 - gammap);
-        let l1 = a / Math.cos(gammap);
-        let l1p = t / Math.tan(Math.PI - delta);
-        let l2p = Math.tan(Math.PI / 2 - gammapp) * t;
-        let l2 = Math.sqrt(Math.pow(t, 2) + Math.pow(l2p, 2));
-        let l3 = (ro - l2) * l1 / ro;
-        let l4 = Math.sqrt(Math.pow(t, 2) + Math.pow(l1p, 2));
-      
-        let h = Math.sin(gamma) * a;
-        let hp = Math.sin(Math.PI / 2 - gammapp) * t;
-        let hpp = Math.sin(gammapp) * l1;
-      
         if(drawFullStar) {
+          let width = star.ro * Math.cos(Math.PI / 2 - 2 * star.alpha)
+
           if(!scale) {
-            scale = (canvas.width - 200) / (2 * ro);
-            canvas.height = 2 * ro * scale + 200;
+            scale = (canvas.width - 200) / (2 * width);
           } else {
-            canvas.width= 2 * ro * scale + 200;
-            canvas.height = 2 * ro * scale + 200;
+            canvas.width= 2 * width * scale + 200;
           }
+
+          canvas.height =  (star.ro + c) * scale + 200;
       
-          // Place in center of canvas
-          ctx.translate(canvas.width / 2, canvas.height / 2);
+          // Horizontal center and as far top as possible
+          ctx.translate(canvas.width / 2, star.ro * scale + 100);
         } else {
+          let h = Math.sin(gamma) * a;
+          let hp = Math.sin(Math.PI / 2 - star.gammapp) * star.t;
+          let hpp = Math.sin(star.gammapp) * star.l1;
+      
           if(!scale) {
             scale = (canvas.width - 200) / (Math.max(h, hpp) + hp);
-            canvas.height = ro * scale + 200;
           } else {
             canvas.width = (Math.max(h, hpp) + hp) * scale + 200;
-            canvas.height = ro * scale + 200;
           }
       
+          canvas.height = (star.ro - Math.sin(Math.PI / 2 - star.alpha) * star.ri) * scale + 200;
+
           // Place as far top-left as possible
-          ctx.translate(100 + hp * scale, 100 + ro * scale);
+          ctx.translate(100 + hp * scale, 100 + star.ro * scale);
         }
       
-      
         function drawPart(withLabels) {
+          let t = Point.fromPolar(star.gammapp, star.t * scale);
+
           let A = new Point(0, 0);
-          let B = Point.fromPolar(Math.PI / 2 - alpha, c * scale);
-          let C = Point.fromPolar(Math.PI / 2, ro * scale);
-          let Cp = new Point(C.x, C.y - t * scale / Math.sin(gammapp));
-          let D = Point.fromPolar(Math.PI / 2 - alpha, ri * scale);
-          let Dp = Point.fromPolar(Math.PI / 2 - alpha, ri * scale - t * scale / Math.cos(Math.PI / 2 - delta));
-          let E = new Point(C.x - Math.cos(gammapp) * t * scale, C.y - Math.sin(gammapp) * t * scale);
-          let F = new Point(D.x + Math.sin(Math.PI - delta - alpha) * l1p * scale, D.y - Math.cos(Math.PI - delta - alpha) * l1p * scale);
+          let B = Point.fromPolar(Math.PI / 2 - star.alpha, c * scale);
+          let C = Point.fromPolar(Math.PI / 2, star.ro * scale);
+          let Cp = new Point(C.x, C.y - star.l2 * scale);
+          let Dp = Point.fromPolar(Math.PI / 2 - star.alpha, star.ri * scale);
+          let D = Point.fromPolar(Math.PI / 2 - star.alpha, (star.ri + star.l4) * scale);
+          let E = new Point(C.x - t.x, C.y - t.y);
+          let F = new Point(Dp.x + t.x, Dp.y + t.y);
       
           /*
              ctx.beginPath();
@@ -179,13 +207,13 @@
              ctx.stroke();
            */
       
-          ctx.beginPath();
-          ctx.strokeStyle = 'black';
-          ctx.moveTo(0, 0);
-          ctx.lineTo(B.x, - B.y);
-          ctx.moveTo(0, 0);
-          ctx.lineTo(C.x, - C.y);
-          ctx.stroke();
+          //ctx.beginPath();
+          //ctx.strokeStyle = 'black';
+          //ctx.moveTo(0, 0);
+          //ctx.lineTo(B.x, - B.y);
+          //ctx.moveTo(0, 0);
+          //ctx.lineTo(C.x, - C.y);
+          //ctx.stroke();
       
           ctx.beginPath();
           ctx.strokeStyle = 'green';
@@ -199,10 +227,10 @@
           ctx.stroke();
       
           if(withLabels) {
-            ctx.fillText(l1.toFixed(1) + "mm", (C.x + D.x) / 2 + 10, - (C.y + D.y) / 2);
-            ctx.fillText(l4.toFixed(1) + "mm", (D.x + Dp.x) / 2 + 10, - (D.y + Dp.y) / 2);
-            ctx.fillText(l3.toFixed(1) + "mm", (Cp.x + Dp.x) / 2 + 10, - (Cp.y + Dp.y) / 2);
-            ctx.fillText(l2.toFixed(1) + "mm", (C.x + Cp.x) / 2 + 10, - (C.y + Cp.y) / 2);
+            ctx.fillText(star.l1.toFixed(1) + "mm", (C.x + D.x) / 2 + 10, - (C.y + D.y) / 2);
+            ctx.fillText(star.l4.toFixed(1) + "mm", (D.x + Dp.x) / 2 + 10, - (D.y + Dp.y) / 2);
+            ctx.fillText(star.l3.toFixed(1) + "mm", (Cp.x + Dp.x) / 2 + 10, - (Cp.y + Dp.y) / 2);
+            ctx.fillText(star.l2.toFixed(1) + "mm", (C.x + Cp.x) / 2 + 10, - (C.y + Cp.y) / 2);
           }
       
           if(withLabels) {
@@ -223,33 +251,49 @@
           }
       
           if(withLabels) {
-            ctx.fillText(t.toFixed(1) + "mm", (C.x + E.x) / 2 + 10, - (C.y + E.y) / 2);
+            let l1p = star.t / Math.tan(Math.PI - star.delta);
+            let l2p = Math.tan(Math.PI / 2 - star.gammapp) * star.t;
+
+            ctx.fillText(star.t.toFixed(1) + "mm", (C.x + E.x) / 2 + 10, - (C.y + E.y) / 2);
             ctx.fillText(l2p.toFixed(1) + "mm", (Cp.x + E.x) / 2 + 10, - (Cp.y + E.y) / 2);
             ctx.fillText(l1p.toFixed(1) + "mm", (F.x + D.x) / 2 + 10, - (F.y + D.y) / 2);
-            ctx.fillText(t.toFixed(1) + "mm", (Dp.x + F.x) / 2 + 10, - (Dp.y + F.y) / 2);
+            ctx.fillText(star.t.toFixed(1) + "mm", (Dp.x + F.x) / 2 + 10, - (Dp.y + F.y) / 2);
           }
       
-          ctx.beginPath();
-          ctx.strokeStyle = 'grey';
-          ctx.moveTo(B.x, - B.y);
-          ctx.lineTo(C.x, - C.y);
-          ctx.stroke();
+          if(drawFullStar) {
+            ctx.beginPath();
+            ctx.strokeStyle = 'grey';
+            ctx.moveTo(B.x, - B.y);
+            ctx.lineTo(C.x, - C.y);
+            ctx.stroke();
+      
+            if(withLabels) {
+              ctx.beginPath();
+              ctx.strokeStyle = 'brown';
+              ctx.moveTo(0, 0);
+              ctx.arc(0, 0, star.ro * scale, -Math.PI / 2, -Math.PI / 2 + 2 * star.alpha, false);
+              ctx.lineTo(0, 0);
+              ctx.moveTo(0, -star.ri * scale);
+              ctx.arc(0, 0, star.ri * scale, -Math.PI / 2, -Math.PI / 2 + 2 * star.alpha, false);
+              ctx.stroke();
+            }
+          }
       
           if(withLabels) {
             //drawAngle(Math.PI / 2 - alpha, alpha, A, 100, "\u03B1");
             //drawAngle(3 * Math.PI / 2, gamma, C, 100, "\u03B3");
             //drawAngle(3 * Math.PI / 2 + gammapp, gammap, C, 40, "\u03B3'");
-            let arcSize = t / 2 * scale;
-            drawAngle(3 * Math.PI / 2, gammapp, C, arcSize);
-            drawAngle(3 * Math.PI / 2 + gammapp, Math.PI - gammapp, Cp, arcSize);
-            drawAngle(3 * Math.PI / 2 - alpha - delta, delta, D, arcSize);
-            drawAngle(Math.PI / 2 - alpha, Math.PI - delta, Dp, arcSize);
+            let arcSize = star.t / 2 * scale;
+            drawAngle(3 * Math.PI / 2, star.gammapp, C, arcSize);
+            drawAngle(3 * Math.PI / 2 + star.gammapp, Math.PI - star.gammapp, Cp, arcSize);
+            drawAngle(3 * Math.PI / 2 - star.alpha - star.delta, star.delta, D, arcSize);
+            drawAngle(Math.PI / 2 - star.alpha, Math.PI - star.delta, Dp, arcSize);
           }
         }
       
         for(let i = 0; i < 10; ++i) {
           ctx.save();
-          ctx.rotate((i + (i % 2)) * alpha);
+          ctx.rotate((i + (i % 2)) * star.alpha);
       
           if(i % 2 == 1) {
             ctx.scale(-1, 1);
@@ -264,12 +308,173 @@
         }
       }
       
-      function redraw() {
+      function refresh(sender) {
+        let locked_angles = (document.getElementById("lock_delta").checked || document.getElementById("lock_gammapp").checked)
+        let id = sender ? sender.id : null
+
+        function isLocked(name) {
+          return document.getElementById("lock_" + name).checked
+        }
+
+        new_star = Object.assign({}, star)
+
+        switch(id) {
+          case "ro":
+          case "ri":
+          case "t": {
+            switch(id) {
+              case "ro":
+                new_star.ro = parseInt(document.getElementById("ro").value, 10)
+                break
+              case "ri":
+                new_star.ri = parseInt(document.getElementById("ri").value, 10)
+                break
+              case "t":
+                new_star.t = parseInt(document.getElementById("t").value, 10)
+                break
+            }
+
+            if(!locked_angles) {
+              let a = new_star.ro * Math.sin(star.alpha);
+              let c = new_star.ro * Math.cos(star.alpha);
+              let gamma = Math.PI / 2 - star.alpha;
+
+              new_star.l4 = (Math.sqrt(Math.pow(a, 4) * Math.pow(new_star.t, 2) + Math.pow(a, 2) * Math.pow(c, 2) * Math.pow(new_star.t, 2) - 2 * Math.pow(a, 2) * c * Math.pow(new_star.t, 2) * new_star.ri - Math.pow(a, 2) * Math.pow(new_star.t, 4) + Math.pow(a, 2) * Math.pow(new_star.t, 2) * Math.pow(new_star.ri, 2)) - c * Math.pow(new_star.t, 2) + Math.pow(new_star.t, 2) * new_star.ri) / (Math.pow(a, 2) - Math.pow(new_star.t, 2))
+              new_star.l1 = a * Math.sqrt(Math.pow(-c + new_star.l4 + new_star.ri, 2) / Math.pow(a, 2) + 1)
+              new_star.l2 = new_star.t / Math.sin(gamma - Math.atan((c - (new_star.ri + new_star.l4)) / a))
+              new_star.l3 = (new_star.ro - new_star.l2) * new_star.l1 / new_star.ro
+
+              let gammap = Math.atan((c - (new_star.ri + new_star.l4)) / a)
+
+              new_star.gammapp = gamma - gammap
+              new_star.delta = Math.PI - (Math.PI / 2 - gammap);
+            } else if(id == "ro") {
+              if(!isLocked("ri")) {
+                let a = new_star.ro * Math.sin(star.alpha);
+                let c = new_star.ro * Math.cos(star.alpha);
+
+                new_star.ri = new_star.l4 / new_star.l2 * (new_star.ro - new_star.l2)
+                new_star.l1 = Math.sqrt(Math.pow(a, 2) + Math.pow(c - new_star.l4 - new_star.ri, 2))
+                new_star.l3 = (new_star.ro - new_star.l2) * new_star.l1 / new_star.ro
+              } else {
+                console.log("Cannot update")
+                break
+              }
+            } else if(id == "ri") {
+              if(!isLocked("ro")) {
+                new_star.ro = new_star.l2 / new_star.l4 * new_star.ri + new_star.l2
+
+                let a = new_star.ro * Math.sin(star.alpha);
+                let c = new_star.ro * Math.cos(star.alpha);
+
+                new_star.l1 = Math.sqrt(Math.pow(a, 2) + Math.pow(c - new_star.l4 - new_star.ri, 2))
+                new_star.l3 = (new_star.ro - new_star.l2) * new_star.l1 / new_star.ro
+              } else {
+                console.log("Cannot update")
+                break
+              }
+            } else if(id == "t") {
+              new_star.l2 = new_star.t / Math.sin(new_star.gammapp)
+              new_star.l4 = new_star.t / Math.sin(new_star.delta)
+
+              if(!isLocked("ro")) {
+                new_star.ro = new_star.l2 / new_star.l4 * new_star.ri + new_star.l2
+              } else if(!isLocked("ri")) {
+                new_star.ri = new_star.l4 / new_star.l2 * (new_star.ro - new_star.l2)
+              } else {
+                console.log("Cannot update")
+                break
+              }
+            }
+
+            star = new_star
+            break
+          }
+          case "delta":
+          case "gammapp": {
+            let a = new_star.ro * Math.sin(star.alpha);
+            let gamma = Math.PI / 2 - star.alpha;
+
+            switch(id) {
+              case "delta":
+                new_star.delta = Math.deg2rad(parseFloat(document.getElementById("delta").value, 10))
+                new_star.gammapp = gamma - (Math.PI / 2 - (Math.PI - new_star.delta))
+                break
+              case "gammapp":
+                new_star.gammapp = Math.deg2rad(parseFloat(document.getElementById("gammapp").value, 10))
+                new_star.delta = Math.PI - (Math.PI / 2 - (gamma - new_star.gammapp))
+                break
+            }
+            
+            new_star.l4 = new_star.t / Math.sin(new_star.delta)
+            new_star.l2 = new_star.t / Math.sin(new_star.gammapp)
+
+            if(!isLocked("ri") && (id == "delta" || isLocked("ro"))) {
+              new_star.ri = new_star.l4 / new_star.l2 * (new_star.ro - new_star.l2)
+            } else if(!isLocked("ro")) {
+              new_star.ro = new_star.l2 / new_star.l4 * new_star.ri + new_star.l2
+            } else {
+              console.log("Cannot update")
+              break
+            }
+
+            new_star.l1 = a / Math.cos(Math.PI - new_star.delta)
+            new_star.l3 = new_star.l1 * (new_star.ro - new_star.l2) / new_star.ro
+
+            star = new_star
+            break
+          }
+          case "detail":
+            break
+          default: {
+            star.ro = parseInt(document.getElementById("ro").value, 10)
+            star.ri = parseInt(document.getElementById("ri").value, 10)
+            star.t = parseInt(document.getElementById("t").value, 10)
+
+            let a = star.ro * Math.sin(star.alpha);
+            let c = star.ro * Math.cos(star.alpha);
+            let gamma = Math.PI / 2 - star.alpha;
+
+            star.l4 = (Math.sqrt(Math.pow(a, 4) * Math.pow(star.t, 2) + Math.pow(a, 2) * Math.pow(c, 2) * Math.pow(star.t, 2) - 2 * Math.pow(a, 2) * c * Math.pow(star.t, 2) * star.ri - Math.pow(a, 2) * Math.pow(star.t, 4) + Math.pow(a, 2) * Math.pow(star.t, 2) * Math.pow(star.ri, 2)) - c * Math.pow(star.t, 2) + Math.pow(star.t, 2) * star.ri) / (Math.pow(a, 2) - Math.pow(star.t, 2))
+            star.l1 = a * Math.sqrt(Math.pow(-c + star.l4 + star.ri, 2) / Math.pow(a, 2) + 1)
+            star.l2 = star.t / Math.sin(gamma - Math.atan((c - (star.ri + star.l4)) / a))
+            star.l3 = (star.ro - star.l2) * star.l1 / star.ro
+
+            let gammap = Math.atan((c - (star.ri + star.l4)) / a)
+
+            star.gammapp = gamma - gammap
+            star.delta = Math.PI - (Math.PI / 2 - gammap);
+            break
+          }
+        }
+
+        for(let name of ["ro", "ri", "t"]) {
+          document.getElementById(name).value = star[name].toFixed(1)
+        }
+
+        for(let name of ["delta", "gammapp"]) {
+          document.getElementById(name).value = Math.rad2deg(star[name]).toFixed(1)
+        }
+
         let canvas = document.getElementById("canvas");
         canvas.width = window.innerWidth;
-        draw(canvas);
+        draw(canvas, star);
       }
       
+      function lock(sender) {
+        let id = sender.id.substr(5)
+        let state = document.getElementById(sender.id).checked
+
+        if(id == "delta" || id == "gammapp") {
+          document.getElementById("lock_delta").checked = state
+          document.getElementById("lock_gammapp").checked = state
+          //document.getElementById("delta").readOnly = state
+          //document.getElementById("gammapp").readOnly = state
+        } else {
+          //document.getElementById(id).readOnly = state
+        }
+      }
+
       function preparePrint() {
         let dpi = 300;
         let ppmm = dpi / 25.4;
@@ -278,7 +483,7 @@
         printCanvas.width = 210 * ppmm;
         printCanvas.height = 297 * ppmm;
       
-        draw(printCanvas, ppmm);
+        draw(printCanvas, star, ppmm);
         let link = document.createElement("a");
         link.setAttribute('href', 'data:application/octet-stream;charset=utf-16le;' + printCanvas.toDataURL());
         link.setAttribute('download', "star.png");
@@ -288,7 +493,7 @@
       }
       
       window.addEventListener('DOMContentLoaded', (event) => {
-        redraw();
+        refresh();
       });
     </script>
   </head>
@@ -296,26 +501,45 @@
   <body>
     <div>
       <div id="control">
-        <div>
-          <label class="left" for="ri">Inner radius (incircle):</label>
-          <input type="number" step="1" value="75" id="ri" onchange="redraw()" />
-          <span>mm</span>
+        <div class="flex-row">
+          <div>
+            <label class="left" for="ri">Inner radius (incircle):</label>
+            <input type="number" step="1" value="50" id="ri" onchange="refresh(this)" />
+            <span>mm</span>
+            <input type="checkbox" id="lock_ri" onchange="lock(this)" />
+          </div>
+          <div>
+            <label class="left" for="ro">Outer radius (circumscribed circle):</label>
+            <input type="number" step="1" value="200" id="ro" onchange="refresh(this)" />
+            <span>mm</span>
+            <input type="checkbox" id="lock_ro" onchange="lock(this)" />
+          </div>
+          <div>
+            <label class="left" for="t">Frame thickness:</label>
+            <input type="number" step="1" value="20" id="t" onchange="refresh(this)" />
+            <span>mm</span>
+            <input type="checkbox" id="lock_t" onchange="lock(this)" />
+          </div>
+          <div>
+            <input type="checkbox" id="detail" onchange="refresh(this)" />
+            <label for="detail">Detail view</label>
+          </div>
+          <button type="button" onclick="preparePrint()">Download</button>
         </div>
-        <div>
-          <label class="left" for="ro">Outer radius (circumscribed circle):</label>
-          <input type="number" step="1" value="200" id="ro" onchange="redraw()" />
-          <span>mm</span>
+        <div class="flex-row">
+          <div>
+            <label class="left" for="delta">Inward angle:</label>
+            <input type="number" step="0.1" id="delta" onchange="refresh(this)" />
+            <span>&deg;</span>
+            <input type="checkbox" id="lock_delta" onchange="lock(this)" />
+          </div>
+          <div>
+            <label class="left" for="gammapp">Outward angle:</label>
+            <input type="number" step="0.1" id="gammapp" onchange="refresh(this)" />
+            <span>&deg;</span>
+            <input type="checkbox" id="lock_gammapp" onchange="lock(this)" />
+          </div>
         </div>
-        <div>
-          <label class="left" for="t">Frame thickness:</label>
-          <input type="number" step="1" value="20" id="t" onchange="redraw()" />
-          <span>mm</span>
-        </div>
-        <div>
-          <input type="checkbox" id="detail" onchange="redraw()" />
-          <label for="detail">Detail view</label>
-        </div>
-        <button type="button" onclick="preparePrint()">Download</button>
       </div>
 
       <canvas id="canvas">
