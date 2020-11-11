@@ -7,6 +7,8 @@
     <meta name="author" content="Moritz Pflanzer">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
     <title>Star Frame Visualizer</title>
     <style type="text/css">
       body {
@@ -21,13 +23,27 @@
         left: 0;
         right: 0;
         background: #eee;
+        display: flex;
       }
 
-      #control .flex-row {
-        padding: 1vw;
+      #control [class^="panel-"] {
         display: flex;
+        flex-wrap: wrap;
         justify-content: space-evenly;
         align-items: baseline;
+        padding: 0 1vw;
+      }
+
+      #control [class^="panel-"] > * {
+        margin: 1vw 0;
+      }
+
+      #control .panel-left {
+        flex: 90%;
+      }
+
+      #control .panel-right {
+        flex: 10%;
       }
 
       input {
@@ -38,13 +54,32 @@
         width: 4em;
       }
 
-      input[readonly] {
-        color: #666;
-        background-color: #ccc;
-      }
-
       label.left {
         margin-right: 0.5em;
+      }
+
+      input.lockable {
+        opacity: 0;
+      }
+
+      label.lockable {
+        border: 1px solid transparent;
+        position: relative;
+        left: -1em;
+        top: -0.05em;
+        vertical-align: middle;
+      }
+
+      input.lockable + label.lockable:before {
+        content: "\0e898";
+      }
+
+      input:checked.lockable + label.lockable:before {
+        content: "\0e897";
+      }
+
+      input.lockable:focus + label.lockable {
+        border: 1px solid gray;
       }
 
       canvas {
@@ -136,20 +171,9 @@
           ctx.fillText(Math.rad2deg(a).toFixed(1) + "\u00B0", c.x + tp.x, - c.y - tp.y);
         }
       
-        //let cp = c - ri;
-        //let gammap = Math.atan(cp / a);
-        //let gammapp = gamma - gammap;
-        //let delta = Math.PI - (Math.PI / 2 - gammap);
-        //let l1 = a / Math.cos(gammap);
-        //let l1p = t / Math.tan(Math.PI - delta);
-        //let l2p = Math.tan(Math.PI / 2 - gammapp) * t;
-        //let l2 = Math.sqrt(Math.pow(t, 2) + Math.pow(l2p, 2));
-        //let l3 = (ro - l2) * l1 / ro;
-        //let l4 = Math.sqrt(Math.pow(t, 2) + Math.pow(l1p, 2));
-
-              let a = star.ro * Math.sin(star.alpha);
-              let c = star.ro * Math.cos(star.alpha);
-              let gamma = Math.PI / 2 - star.alpha
+        let a = star.ro * Math.sin(star.alpha);
+        let c = star.ro * Math.cos(star.alpha);
+        let gamma = Math.PI / 2 - star.alpha
 
         let drawFullStar = !document.getElementById("detail").checked;
       
@@ -468,10 +492,6 @@
         if(id == "delta" || id == "gammapp") {
           document.getElementById("lock_delta").checked = state
           document.getElementById("lock_gammapp").checked = state
-          //document.getElementById("delta").readOnly = state
-          //document.getElementById("gammapp").readOnly = state
-        } else {
-          //document.getElementById(id).readOnly = state
         }
       }
 
@@ -501,44 +521,49 @@
   <body>
     <div>
       <div id="control">
-        <div class="flex-row">
+        <div class="panel-left">
           <div>
             <label class="left" for="ri">Inner radius (incircle):</label>
             <input type="number" step="1" value="50" id="ri" onchange="refresh(this)" />
             <span>mm</span>
-            <input type="checkbox" id="lock_ri" onchange="lock(this)" />
+            <input class="lockable" type="checkbox" id="lock_ri" onchange="lock(this)" />
+            <label class="material-icons lockable" for="lock_ri"></label>
           </div>
           <div>
             <label class="left" for="ro">Outer radius (circumscribed circle):</label>
             <input type="number" step="1" value="200" id="ro" onchange="refresh(this)" />
             <span>mm</span>
-            <input type="checkbox" id="lock_ro" onchange="lock(this)" />
+            <input class="lockable" type="checkbox" id="lock_ro" onchange="lock(this)" />
+            <label class="material-icons lockable" for="lock_ro"></label>
           </div>
           <div>
             <label class="left" for="t">Frame thickness:</label>
             <input type="number" step="1" value="20" id="t" onchange="refresh(this)" />
             <span>mm</span>
-            <input type="checkbox" id="lock_t" onchange="lock(this)" />
+            <input class="lockable" type="checkbox" id="lock_t" onchange="lock(this)" />
+            <label class="material-icons lockable" for="lock_t"></label>
           </div>
-          <div>
-            <input type="checkbox" id="detail" onchange="refresh(this)" />
-            <label for="detail">Detail view</label>
-          </div>
-          <button type="button" onclick="preparePrint()">Download</button>
-        </div>
-        <div class="flex-row">
           <div>
             <label class="left" for="delta">Inward angle:</label>
             <input type="number" step="0.1" id="delta" onchange="refresh(this)" />
             <span>&deg;</span>
-            <input type="checkbox" id="lock_delta" onchange="lock(this)" />
+            <input class="lockable" type="checkbox" id="lock_delta" onchange="lock(this)" />
+            <label class="material-icons lockable" for="lock_delta"></label>
           </div>
           <div>
             <label class="left" for="gammapp">Outward angle:</label>
             <input type="number" step="0.1" id="gammapp" onchange="refresh(this)" />
             <span>&deg;</span>
-            <input type="checkbox" id="lock_gammapp" onchange="lock(this)" />
+            <input class="lockable" type="checkbox" id="lock_gammapp" onchange="lock(this)" />
+            <label class="material-icons lockable" for="lock_gammapp"></label>
           </div>
+        </div>
+        <div class="panel-right">
+          <div>
+            <input type="checkbox" id="detail" onchange="refresh(this)" />
+            <label for="detail">Detail view</label>
+          </div>
+          <button type="button" onclick="preparePrint()">Download</button>
         </div>
       </div>
 
