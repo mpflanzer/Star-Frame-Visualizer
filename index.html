@@ -276,10 +276,10 @@
       
           if(withLabels) {
             let l1p = star.t / Math.tan(Math.PI - star.delta);
-            let l2p = Math.tan(Math.PI / 2 - star.gammapp) * star.t;
+            let l3p = Math.tan(Math.PI / 2 - star.gammapp) * star.t;
 
             ctx.fillText(star.t.toFixed(1) + "mm", (C.x + E.x) / 2 + 10, - (C.y + E.y) / 2);
-            ctx.fillText(l2p.toFixed(1) + "mm", (Cp.x + E.x) / 2 + 10, - (Cp.y + E.y) / 2);
+            ctx.fillText(l3p.toFixed(1) + "mm", (Cp.x + E.x) / 2 + 10, - (Cp.y + E.y) / 2);
             ctx.fillText(l1p.toFixed(1) + "mm", (F.x + D.x) / 2 + 10, - (F.y + D.y) / 2);
             ctx.fillText(star.t.toFixed(1) + "mm", (Dp.x + F.x) / 2 + 10, - (Dp.y + F.y) / 2);
           }
