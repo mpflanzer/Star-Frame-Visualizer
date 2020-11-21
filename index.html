@@ -416,7 +416,6 @@
           }
           case "delta":
           case "gammapp": {
-            let a = new_star.ro * Math.sin(star.alpha);
             let gamma = Math.PI / 2 - star.alpha;
 
             switch(id) {
@@ -442,8 +441,11 @@
               break
             }
 
-            new_star.l1 = a / Math.cos(Math.PI - new_star.delta)
-            new_star.l3 = new_star.l1 * (new_star.ro - new_star.l2) / new_star.ro
+            let a = new_star.ro * Math.sin(star.alpha);
+            let c = new_star.ro * Math.cos(star.alpha);
+
+            new_star.l1 = Math.sqrt(Math.pow(a, 2) + Math.pow(c - new_star.l4 - new_star.ri, 2))
+            new_star.l3 = (new_star.ro - new_star.l2) * new_star.l1 / new_star.ro
 
             star = new_star
             break
