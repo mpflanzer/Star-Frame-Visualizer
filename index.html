@@ -474,6 +474,16 @@
           }
         }
 
+        // Sanity checks
+        {
+          let l1p = star.t / Math.tan(Math.PI - star.delta);
+          let l3p = Math.tan(Math.PI / 2 - star.gammapp) * star.t;
+
+          console.assert((star.l1 + l1p).toFixed(0) == (star.l3 + l3p).toFixed(0))
+          console.assert((star.ro / (star.ro - star.l2)).toFixed(0) == ((star.ri + star.l4) / star.ri).toFixed(0))
+        }
+        // Sanity checks end
+
         for(let name of ["ro", "ri", "t"]) {
           document.getElementById(name).value = star[name].toFixed(1)
         }
